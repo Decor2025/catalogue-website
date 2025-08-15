@@ -6,27 +6,27 @@ let catalogueData = null;
 
 // Initialize dynamic catalogue page
 document.addEventListener('DOMContentLoaded', () => {
-  // Get catalogue ID from URL path
-  const path = window.location.pathname;
-  const catalogueId = path.split('/').pop().replace('.html', '');
-  
-  if (catalogueId && catalogueId !== 'catalogue') {
-    currentCatalogueId = catalogueId;
+  const urlPath = window.location.pathname;
+
+  // Match /catalogue/:id
+  const match = urlPath.match(/^\/catalogue\/([^/]+)$/);
+  if (match) {
+    // URL like /catalogue/wooden
+    currentCatalogueId = match[1];
+  } else if (urlPath.endsWith('catalogue.html')) {
+    // URL like /catalogue.html?id=wooden
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('id')) {
+      currentCatalogueId = params.get('id');
+    }
+  }
+
+  if (currentCatalogueId) {
     loadCatalogueData();
     loadNavigationLinks();
     setupEventListeners();
   } else {
-    // Handle dynamic routing for /catalogue/:id URLs
-    const urlPath = window.location.pathname;
-    const match = urlPath.match(/\/catalogue\/(.+)/);
-    if (match) {
-      currentCatalogueId = match[1];
-      loadCatalogueData();
-      loadNavigationLinks();
-      setupEventListeners();
-    } else {
-      showNotFoundState();
-    }
+    showNotFoundState();
   }
 });
 
@@ -35,17 +35,19 @@ async function loadNavigationLinks() {
   try {
     const snapshot = await db.ref('catalogues').once('value');
     const navLinks = document.getElementById('nav-links');
-    
+
     let linksHTML = '<a href="/" class="text-gray-500 hover:text-gray-700 px-3 py-2 text-sm font-medium">Home</a>';
-    
+
     snapshot.forEach(childSnapshot => {
       const catalogue = childSnapshot.val();
       const isActive = childSnapshot.key === currentCatalogueId;
-      const activeClass = isActive ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700';
-      
+      const activeClass = isActive
+        ? 'text-blue-600 border-b-2 border-blue-600'
+        : 'text-gray-500 hover:text-gray-700';
+
       linksHTML += `<a href="/catalogue/${childSnapshot.key}" class="${activeClass} px-3 py-2 text-sm font-medium">${catalogue.title}</a>`;
     });
-    
+
     navLinks.innerHTML = linksHTML;
   } catch (error) {
     console.error('Error loading navigation:', error);
@@ -56,18 +58,18 @@ async function loadNavigationLinks() {
 async function loadCatalogueData() {
   try {
     showSkeleton('loading-skeleton', 8);
-    
+
     // Listen for real-time updates
     db.ref(`catalogues/${currentCatalogueId}`).on('value', (snapshot) => {
       if (snapshot.exists()) {
         catalogueData = snapshot.val();
         updatePageContent(catalogueData);
-        
+
         // Increment view count on first load
         if (products.length === 0) {
           incrementViewCount();
         }
-        
+
         products = catalogueData.images || [];
         renderProducts();
       } else {
@@ -86,8 +88,7 @@ function updatePageContent(data) {
   const title = data.title || `${currentCatalogueId.charAt(0).toUpperCase() + currentCatalogueId.slice(1)} Products`;
   const views = data.views || 0;
   const imageCount = data.images ? data.images.length : 0;
-  
-  // Update page title and header
+
   document.title = `${title} - Virtual Product Catalogue`;
   document.getElementById('catalogue-title').textContent = title;
   document.getElementById('catalogue-description').textContent = `Browse our collection of ${title.toLowerCase()}`;
@@ -100,13 +101,12 @@ async function incrementViewCount() {
   try {
     const catalogueRef = db.ref(`catalogues/${currentCatalogueId}`);
     const snapshot = await catalogueRef.once('value');
-    
+
     if (snapshot.exists()) {
       await catalogueRef.update({
         views: (snapshot.val().views || 0) + 1
       });
     } else {
-      // Create catalogue if it doesn't exist
       await catalogueRef.set({
         title: `${currentCatalogueId.charAt(0).toUpperCase() + currentCatalogueId.slice(1)} Products`,
         images: [],
@@ -125,23 +125,21 @@ function renderProducts() {
   const productsContainer = document.getElementById('products-grid');
   const emptyState = document.getElementById('empty-state');
   const notFoundState = document.getElementById('not-found-state');
-  
-  // Hide loading skeleton and not found state
+
   loadingContainer.style.display = 'none';
   notFoundState.style.display = 'none';
-  
+
   if (products.length === 0) {
     productsContainer.style.display = 'none';
     emptyState.style.display = 'block';
     return;
   }
-  
-  // Show products grid
+
   emptyState.style.display = 'none';
   productsContainer.style.display = 'grid';
-  
+
   productsContainer.innerHTML = products.map((product, index) => `
-    <div class="bg-white rounded-lg shadow-md overflow-hidden product-card cursor-pointer" 
+    <div class="bg-white rounded-lg shadow-md overflow-hidden product-card cursor-pointer"
          onclick="openProductModal(${index})">
       <div class="image-container h-48 bg-gray-200 relative">
         <img src="${product.url}" alt="${product.title}" 
@@ -173,8 +171,7 @@ function renderProducts() {
       </div>
     </div>
   `).join('');
-  
-  // Setup lazy loading
+
   setupLazyLoading();
 }
 
@@ -184,7 +181,7 @@ function showNotFoundState() {
   document.getElementById('products-grid').style.display = 'none';
   document.getElementById('empty-state').style.display = 'none';
   document.getElementById('not-found-state').style.display = 'block';
-  
+
   document.title = 'Catalogue Not Found - Virtual Product Catalogue';
   document.getElementById('catalogue-title').textContent = 'Catalogue Not Found';
   document.getElementById('catalogue-description').textContent = 'The requested catalogue does not exist';
@@ -194,11 +191,9 @@ function showNotFoundState() {
 function openProductModal(index) {
   const product = products[index];
   if (!product) return;
-  
-  // Increment click count
+
   incrementClickCount(index);
-  
-  // Update modal content
+
   document.getElementById('modal-title').textContent = product.title;
   document.getElementById('modal-content').innerHTML = `
     <div class="space-y-4">
@@ -213,8 +208,7 @@ function openProductModal(index) {
       </div>
     </div>
   `;
-  
-  // Show modal
+
   showModal('image-modal');
 }
 
@@ -226,7 +220,7 @@ async function incrementClickCount(index) {
       ...updatedImages[index],
       clicks: (updatedImages[index].clicks || 0) + 1
     };
-    
+
     await db.ref(`catalogues/${currentCatalogueId}/images`).set(updatedImages);
   } catch (error) {
     console.error('Error incrementing click count:', error);
@@ -235,18 +229,16 @@ async function incrementClickCount(index) {
 
 // Setup event listeners
 function setupEventListeners() {
-  // Close modal events
   document.getElementById('close-modal').addEventListener('click', () => {
     hideModal('image-modal');
   });
-  
+
   document.getElementById('image-modal').addEventListener('click', (e) => {
     if (e.target.id === 'image-modal') {
       hideModal('image-modal');
     }
   });
-  
-  // Keyboard navigation
+
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       hideModal('image-modal');
@@ -261,5 +253,4 @@ window.addEventListener('beforeunload', () => {
   }
 });
 
-// Export for global use
 window.openProductModal = openProductModal;
