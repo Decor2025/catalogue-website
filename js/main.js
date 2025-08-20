@@ -67,7 +67,7 @@ function renderCatalogues() {
         <div class="h-48 bg-gray-200 relative">
           <img src="${sampleImage}" alt="${catalogue.title}" class="w-full h-full object-cover">
           <div class="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-300">
-            <a href="${catalogue.id}.html" class="bg-white text-gray-900 px-4 py-2 rounded-md font-medium hover:bg-gray-100 transition-colors">
+            <a href="catalogue.html?id=${catalogue.id}" class="bg-white text-gray-900 px-4 py-2 rounded-md font-medium hover:bg-gray-100 transition-colors">
               View Catalogue
             </a>
           </div>
@@ -90,7 +90,7 @@ function renderCatalogues() {
             </div>
           </div>
           <div class="flex justify-between items-center">
-            <a href="${catalogue.id}.html" class="text-blue-600 hover:text-blue-800 font-medium text-sm">
+            <a href="catalogue.html?id=${catalogue.id}" class="text-blue-600 hover:text-blue-800 font-medium text-sm">
               Browse Products →
             </a>
             <div class="text-xs text-gray-400">

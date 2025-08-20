@@ -8,17 +8,15 @@ let catalogueData = null;
 document.addEventListener('DOMContentLoaded', () => {
   const urlPath = window.location.pathname;
 
-  // Match /catalogue/:id
-  const match = urlPath.match(/^\/catalogue\/([^/]+)$/);
-  if (match) {
+  // Extract catalogue ID from URL
+  if (urlPath.includes('/catalogue/')) {
     // URL like /catalogue/wooden
-    currentCatalogueId = match[1];
-  } else if (urlPath.endsWith('catalogue.html')) {
-    // URL like /catalogue.html?id=wooden
+    const segments = urlPath.split('/');
+    currentCatalogueId = segments[segments.length - 1];
+  } else {
+    // Fallback: check URL parameters
     const params = new URLSearchParams(window.location.search);
-    if (params.has('id')) {
-      currentCatalogueId = params.get('id');
-    }
+    currentCatalogueId = params.get('id');
   }
 
   if (currentCatalogueId) {
@@ -45,7 +43,7 @@ async function loadNavigationLinks() {
         ? 'text-blue-600 border-b-2 border-blue-600'
         : 'text-gray-500 hover:text-gray-700';
 
-      linksHTML += `<a href="/catalogue/${childSnapshot.key}" class="${activeClass} px-3 py-2 text-sm font-medium">${catalogue.title}</a>`;
+      linksHTML += `<a href="${childSnapshot.key}.html" class="${activeClass} px-3 py-2 text-sm font-medium">${catalogue.title}</a>`;
     });
 
     navLinks.innerHTML = linksHTML;
@@ -57,7 +55,10 @@ async function loadNavigationLinks() {
 // Load catalogue data from Firebase
 async function loadCatalogueData() {
   try {
-    showSkeleton('loading-skeleton', 8);
+    document.getElementById('loading-skeleton').style.display = 'grid';
+    document.getElementById('products-grid').style.display = 'none';
+    document.getElementById('empty-state').style.display = 'none';
+    document.getElementById('not-found-state').style.display = 'none';
 
     // Listen for real-time updates
     db.ref(`catalogues/${currentCatalogueId}`).on('value', (snapshot) => {
@@ -78,7 +79,9 @@ async function loadCatalogueData() {
     });
   } catch (error) {
     console.error('Error loading catalogue:', error);
-    showToast('Error loading catalogue data', 'error');
+    if (window.showToast) {
+      showToast('Error loading catalogue data', 'error');
+    }
     showNotFoundState();
   }
 }
@@ -92,7 +95,7 @@ function updatePageContent(data) {
   document.title = `${title} - Virtual Product Catalogue`;
   document.getElementById('catalogue-title').textContent = title;
   document.getElementById('catalogue-description').textContent = `Browse our collection of ${title.toLowerCase()}`;
-  document.getElementById('view-count').textContent = `${formatNumber(views)} views`;
+  document.getElementById('view-count').textContent = `${window.formatNumber ? formatNumber(views) : views} views`;
   document.getElementById('image-count').textContent = `${imageCount} items`;
 }
 
@@ -165,14 +168,16 @@ function renderProducts() {
             <svg class="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
-            ${formatNumber(product.clicks || 0)} clicks
+            ${window.formatNumber ? formatNumber(product.clicks || 0) : (product.clicks || 0)} clicks
           </div>
         </div>
       </div>
     </div>
   `).join('');
 
-  setupLazyLoading();
+  if (window.setupLazyLoading) {
+    setupLazyLoading();
+  }
 }
 
 // Show not found state
@@ -202,14 +207,18 @@ function openProductModal(index) {
       <div>
         <div class="flex items-center justify-between mb-2">
           <span class="text-sm font-medium text-blue-600">${product.code}</span>
-          <span class="text-xs text-gray-500">${formatNumber(product.clicks || 0)} views</span>
+          <span class="text-xs text-gray-500">${window.formatNumber ? formatNumber(product.clicks || 0) : (product.clicks || 0)} views</span>
         </div>
         <p class="text-gray-700">${product.description}</p>
       </div>
     </div>
   `;
 
-  showModal('image-modal');
+  if (window.showModal) {
+    showModal('image-modal');
+  } else {
+    document.getElementById('image-modal').classList.remove('hidden');
+  }
 }
 
 // Increment click count
@@ -230,18 +239,30 @@ async function incrementClickCount(index) {
 // Setup event listeners
 function setupEventListeners() {
   document.getElementById('close-modal').addEventListener('click', () => {
-    hideModal('image-modal');
+    if (window.hideModal) {
+      hideModal('image-modal');
+    } else {
+      document.getElementById('image-modal').classList.add('hidden');
+    }
   });
 
   document.getElementById('image-modal').addEventListener('click', (e) => {
     if (e.target.id === 'image-modal') {
-      hideModal('image-modal');
+      if (window.hideModal) {
+        hideModal('image-modal');
+      } else {
+        document.getElementById('image-modal').classList.add('hidden');
+      }
     }
   });
 
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
-      hideModal('image-modal');
+      if (window.hideModal) {
+        hideModal('image-modal');
+      } else {
+        document.getElementById('image-modal').classList.add('hidden');
+      }
     }
   });
 }
