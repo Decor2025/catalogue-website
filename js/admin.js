@@ -465,7 +465,6 @@ function setupEventListeners() {
 
 // Export functions for global use
 window.openCatalogueModal = openCatalogueModal;
-window.deleteCatalogue = deleteCatalogue;
 window.editProduct = editProduct;
 window.editProductImage = editProductImage;
 window.deleteProduct = deleteProduct;
