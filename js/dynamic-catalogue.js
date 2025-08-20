@@ -3,6 +3,7 @@
 let currentCatalogueId = null;
 let products = [];
 let catalogueData = null;
+let hasIncrementedView = false;
 
 // Initialize dynamic catalogue page
 document.addEventListener('DOMContentLoaded', () => {
@@ -66,8 +67,9 @@ async function loadCatalogueData() {
         catalogueData = snapshot.val();
         updatePageContent(catalogueData);
 
-        // Increment view count on first load
-        if (products.length === 0) {
+        // Increment view count only once on first load
+        if (!hasIncrementedView) {
+          hasIncrementedView = true;
           incrementViewCount();
         }
 
