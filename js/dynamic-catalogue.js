@@ -209,7 +209,6 @@ function openProductModal(index) {
       <div>
         <div class="flex items-center justify-between mb-2">
           <span class="text-sm font-medium text-blue-600">${product.code}</span>
-          <span class="text-xs text-gray-500">${window.formatNumber ? formatNumber(product.clicks || 0) : (product.clicks || 0)} views</span>
         </div>
         <p class="text-gray-700">${product.description}</p>
       </div>
